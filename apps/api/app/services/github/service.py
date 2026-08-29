@@ -58,8 +58,9 @@ class GitHubService:
         await self.db.refresh(analysis)
         return repository, analysis
 
-    async def ask_repository(self, repository_id: UUID, question: str) -> dict:
-        repo = await self.db.get(GitHubRepository, repository_id)
+    async def ask_repository_for_user(self, user_id: UUID, repository_id: UUID, question: str) -> dict:
+        result = await self.db.execute(select(GitHubRepository).where(GitHubRepository.id == repository_id, GitHubRepository.user_id == user_id))
+        repo = result.scalar_one_or_none()
         if not repo:
             raise ValueError("Repository not found")
         relevant_paths = [entry["path"] for entry in repo.file_index[:5]]
@@ -100,4 +101,3 @@ class GitHubService:
         if len(parts) < 2:
             raise ValueError("Repository URL must look like https://github.com/owner/name")
         return parts[0], parts[1].removesuffix(".git")
-

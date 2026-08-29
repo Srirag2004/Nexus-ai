@@ -1,101 +1,43 @@
 "use client";
 
+import Link from "next/link";
+import { ArrowRight, BookOpen, CircleCheck, Github, MessageSquareText, Plus, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
-import { Panel } from "@/components/ui/panel";
-import { Conversation, RepositoryRecord } from "@/lib/types";
 
-type DashboardState = {
-  system: string;
-  conversations: Conversation[];
-  documents: number;
-  repositories: RepositoryRecord[];
-  memories: number;
-  agentRuns: number;
-};
+type WorkspaceState = { conversations: number; documents: number; repositories: number; online: boolean };
+
+const quickStarts = [
+  { title: "Ask anything", text: "Get help connecting your ideas, code, and context.", href: "/chat", icon: MessageSquareText },
+  { title: "Build your library", text: "Add notes, specs, PDFs, and docs you want to use later.", href: "/knowledge", icon: BookOpen },
+  { title: "Understand a repository", text: "Turn a GitHub URL into a concise engineering brief.", href: "/github", icon: Github },
+];
 
 export default function DashboardPage() {
-  const [state, setState] = useState<DashboardState>({
-    system: "loading",
-    conversations: [],
-    documents: 0,
-    repositories: [],
-    memories: 0,
-    agentRuns: 0,
-  });
+  const [workspace, setWorkspace] = useState<WorkspaceState>({ conversations: 0, documents: 0, repositories: 0, online: false });
 
   useEffect(() => {
-    Promise.all([
-      api.health(),
-      api.conversations(),
-      api.documents(),
-      api.repositories(),
-      api.memories(),
-      api.agentRuns(),
-    ])
-      .then(([health, conversations, documents, repositories, memories, agentRuns]) => {
-        setState({
-          system: `${health.status} / ${health.database}`,
-          conversations,
-          documents: documents.length,
-          repositories,
-          memories: memories.length,
-          agentRuns: agentRuns.length,
-        });
-      })
-      .catch(() => {
-        setState((current) => ({ ...current, system: "backend unavailable" }));
-      });
+    Promise.all([api.health(), api.conversations(), api.documents(), api.repositories()])
+      .then(([health, conversations, documents, repositories]) => setWorkspace({ conversations: conversations.length, documents: documents.length, repositories: repositories.length, online: health.status === "healthy" }))
+      .catch(() => setWorkspace((current) => ({ ...current, online: false })));
   }, []);
 
-  const cards = [
-    ["System", state.system],
-    ["Conversations", `${state.conversations.length}`],
-    ["Knowledge Docs", `${state.documents}`],
-    ["Repositories", `${state.repositories.length}`],
-    ["Memories", `${state.memories}`],
-    ["Agent Runs", `${state.agentRuns}`],
-  ];
-
   return (
-    <div className="space-y-6">
-      <Panel title="NEXUS AI" description="A command center for chat, knowledge, repositories, memory, and career context.">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {cards.map(([label, value]) => (
-            <div key={label} className="rounded-2xl border border-border bg-black/20 p-4">
-              <div className="text-xs uppercase tracking-[0.25em] text-muted">{label}</div>
-              <div className="mt-3 text-2xl font-semibold">{value}</div>
-            </div>
-          ))}
-        </div>
-      </Panel>
+    <div className="space-y-6 pb-8">
+      <header className="flex flex-wrap items-center justify-between gap-4 px-1 pt-2">
+        <div><p className="text-xs font-bold uppercase tracking-[0.22em] text-accent">Personal intelligence system</p><h1 className="mt-2 font-serif text-3xl font-bold tracking-tight md:text-4xl">Welcome to your thinking space.</h1></div>
+        <div className={`flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold ${workspace.online ? "border-accent/35 bg-accent/10 text-accent" : "border-border bg-black/10 text-muted"}`}><span className={`h-2 w-2 rounded-full ${workspace.online ? "bg-accent" : "bg-muted"}`} />{workspace.online ? "Nexus is ready" : "Connect the API to begin"}</div>
+      </header>
 
-      <div className="grid gap-6 xl:grid-cols-2">
-        <Panel title="Recent Conversations">
-          <div className="space-y-3">
-            {state.conversations.slice(0, 5).map((conversation) => (
-              <div key={conversation.id} className="rounded-2xl border border-border px-4 py-3">
-                <div className="font-medium">{conversation.title}</div>
-                <div className="text-sm text-muted">{new Date(conversation.updated_at).toLocaleString()}</div>
-              </div>
-            ))}
-          </div>
-        </Panel>
+      <section className="panel-glow relative overflow-hidden rounded-[2rem] border border-accent/20 bg-[#173442] p-6 md:p-9">
+        <div className="absolute -right-12 -top-16 h-56 w-56 rounded-full bg-accent/15 blur-3xl" />
+        <div className="relative max-w-2xl"><div className="mb-5 grid h-11 w-11 place-items-center rounded-2xl bg-accent text-bg"><Sparkles size={21} /></div><p className="text-sm font-medium text-accent">Start with a single thought</p><h2 className="mt-2 font-serif text-3xl font-bold leading-tight tracking-tight md:text-5xl">What do you want to move forward today?</h2><p className="mt-4 max-w-xl text-sm leading-6 text-text/75 md:text-base">Nexus brings your documents, projects, and career goals into one calm place so you can get from question to next step faster.</p><Link href="/chat" className="mt-7 inline-flex items-center gap-2 rounded-2xl bg-accent px-5 py-3 text-sm font-bold text-bg transition hover:-translate-y-0.5 hover:bg-[#d2ff91]">Open a new conversation <ArrowRight size={16} /></Link></div>
+      </section>
 
-        <Panel title="Repository Activity">
-          <div className="space-y-3">
-            {state.repositories.slice(0, 5).map((repository) => (
-              <div key={repository.id} className="rounded-2xl border border-border px-4 py-3">
-                <div className="font-medium">
-                  {repository.owner}/{repository.name}
-                </div>
-                <div className="text-sm text-muted">{repository.latest_analysis?.summary ?? "Awaiting analysis"}</div>
-              </div>
-            ))}
-          </div>
-        </Panel>
-      </div>
+      <section><div className="mb-3 flex items-center justify-between px-1"><h2 className="font-serif text-xl font-bold">Choose a starting point</h2><span className="text-xs text-muted">You can return here anytime</span></div><div className="grid gap-4 md:grid-cols-3">{quickStarts.map(({ title, text, href, icon: Icon }) => <Link key={href} href={href} className="group panel-glow rounded-[1.5rem] border border-border/80 bg-panel/80 p-5 transition hover:-translate-y-1 hover:border-accent/40"><div className="flex items-start justify-between"><div className="grid h-10 w-10 place-items-center rounded-2xl bg-white/5 text-accent"><Icon size={19} /></div><ArrowRight size={17} className="text-muted transition group-hover:translate-x-1 group-hover:text-accent" /></div><h3 className="mt-7 font-serif text-lg font-bold">{title}</h3><p className="mt-2 text-sm leading-5 text-muted">{text}</p></Link>)}</div></section>
+
+      <section className="grid gap-4 md:grid-cols-[1.4fr_0.8fr]"><div className="panel-glow rounded-[1.5rem] border border-border/80 bg-panel/80 p-5"><div className="flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">Workspace pulse</p><h2 className="mt-1 font-serif text-xl font-bold">Everything in one view</h2></div><CircleCheck size={20} className="text-accent" /></div><div className="mt-5 grid grid-cols-3 gap-3">{[["Conversations", workspace.conversations], ["Knowledge", workspace.documents], ["Repositories", workspace.repositories]].map(([label, value]) => <div key={String(label)} className="rounded-2xl bg-black/15 p-4"><div className="font-serif text-3xl font-bold">{value}</div><div className="mt-1 text-xs text-muted">{label}</div></div>)}</div></div><Link href="/knowledge" className="panel-glow flex min-h-44 flex-col justify-between rounded-[1.5rem] border border-border/80 bg-[#17303a] p-5 transition hover:border-accent/40"><Plus size={20} className="text-accent" /><div><h2 className="font-serif text-xl font-bold">Add context</h2><p className="mt-1 text-sm leading-5 text-muted">Upload a document and make your next answer sharper.</p></div></Link></section>
     </div>
   );
 }

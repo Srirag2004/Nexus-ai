@@ -4,7 +4,7 @@ import structlog
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.router import api_router
@@ -21,8 +21,21 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    async with engine.begin() as connection:
-        await connection.run_sync(Base.metadata.create_all)
+    # Local development stays zero-config; hosted environments use Alembic before startup.
+    if settings.app_env == "development":
+        async with engine.begin() as connection:
+            await connection.run_sync(Base.metadata.create_all)
+            # Keep the local SQLite demo database compatible with additive schema changes.
+            if connection.dialect.name == "sqlite":
+                user_columns = await connection.run_sync(lambda sync_connection: {column["name"] for column in inspect(sync_connection).get_columns("users")})
+                agent_columns = await connection.run_sync(lambda sync_connection: {column["name"] for column in inspect(sync_connection).get_columns("agent_runs")})
+                evaluation_columns = await connection.run_sync(lambda sync_connection: {column["name"] for column in inspect(sync_connection).get_columns("evaluation_runs")})
+                if "password_hash" not in user_columns:
+                    await connection.execute(text("ALTER TABLE users ADD COLUMN password_hash VARCHAR(255)"))
+                if "user_id" not in agent_columns:
+                    await connection.execute(text("ALTER TABLE agent_runs ADD COLUMN user_id CHAR(36)"))
+                if "user_id" not in evaluation_columns:
+                    await connection.execute(text("ALTER TABLE evaluation_runs ADD COLUMN user_id CHAR(36)"))
     logger.info("app_started", env=settings.app_env, provider=settings.ai_provider)
     yield
 

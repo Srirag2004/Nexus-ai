@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
+from app.core.security import get_current_user
+from app.db.models.entities import User
 from app.db.session import get_db
 from app.schemas.document import DocumentAskRequest, DocumentAskResponse, DocumentResponse
 from app.services.rag.service import DocumentService
@@ -11,9 +13,9 @@ router = APIRouter()
 
 
 @router.get("", response_model=list[DocumentResponse])
-async def list_documents(db: AsyncSession = Depends(get_db)) -> list[DocumentResponse]:
+async def list_documents(db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)) -> list[DocumentResponse]:
     service = DocumentService(db)
-    documents = await service.list_documents(get_settings().default_user_id)
+    documents = await service.list_documents(user.id)
     return [
         DocumentResponse(
             id=document.id,
@@ -28,7 +30,7 @@ async def list_documents(db: AsyncSession = Depends(get_db)) -> list[DocumentRes
 
 
 @router.post("", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
-async def upload_document(file: UploadFile = File(...), db: AsyncSession = Depends(get_db)) -> DocumentResponse:
+async def upload_document(file: UploadFile = File(...), db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)) -> DocumentResponse:
     payload = await file.read()
     max_size = get_settings().max_upload_size_mb * 1024 * 1024
     if len(payload) > max_size:
@@ -36,7 +38,7 @@ async def upload_document(file: UploadFile = File(...), db: AsyncSession = Depen
     try:
         service = DocumentService(db)
         document = await service.ingest_document(
-            get_settings().default_user_id,
+            user.id,
             slugify_filename(file.filename or "document.txt"),
             file.content_type or "application/octet-stream",
             payload,
@@ -54,13 +56,12 @@ async def upload_document(file: UploadFile = File(...), db: AsyncSession = Depen
 
 
 @router.post("/ask", response_model=DocumentAskResponse)
-async def ask_documents(payload: DocumentAskRequest, db: AsyncSession = Depends(get_db)) -> DocumentAskResponse:
+async def ask_documents(payload: DocumentAskRequest, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)) -> DocumentAskResponse:
     service = DocumentService(db)
-    return await service.ask(get_settings().default_user_id, payload.question, payload.top_k)
+    return await service.ask(user.id, payload.question, payload.top_k)
 
 
 @router.delete("/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_document(document_id: str, db: AsyncSession = Depends(get_db)) -> None:
+async def delete_document(document_id: str, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)) -> None:
     service = DocumentService(db)
-    await service.delete_document(get_settings().default_user_id, document_id)
-
+    await service.delete_document(user.id, document_id)

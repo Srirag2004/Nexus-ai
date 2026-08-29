@@ -21,26 +21,13 @@ class ChatService:
         self.memory_service = MemoryService(db)
         self.document_service = DocumentService(db)
 
-    async def ensure_user(self, user_id: str) -> User:
-        uid = uuid.UUID(user_id)
-        user = await self.db.get(User, uid)
-        if user:
-            return user
-        user = User(id=uid, display_name="Local User")
-        self.db.add(user)
-        await self.db.commit()
-        await self.db.refresh(user)
-        return user
-
     async def list_conversations(self, user_id: str) -> list[Conversation]:
-        await self.ensure_user(user_id)
         result = await self.db.execute(
             select(Conversation).where(Conversation.user_id == uuid.UUID(user_id)).order_by(Conversation.updated_at.desc())
         )
         return list(result.scalars())
 
     async def get_conversation(self, user_id: str, conversation_id: uuid.UUID) -> Conversation | None:
-        await self.ensure_user(user_id)
         result = await self.db.execute(
             select(Conversation).where(
                 Conversation.user_id == uuid.UUID(user_id),
@@ -53,7 +40,6 @@ class ChatService:
         return conversation
 
     async def create_conversation(self, user_id: str, title: str) -> Conversation:
-        await self.ensure_user(user_id)
         conversation = Conversation(user_id=uuid.UUID(user_id), title=title)
         self.db.add(conversation)
         await self.db.commit()
@@ -68,7 +54,6 @@ class ChatService:
 
     async def chat(self, user_id: str, payload: ChatRequest) -> tuple[Conversation, Message, str, list[dict[str, Any]]]:
         started = time.perf_counter()
-        await self.ensure_user(user_id)
         conversation = await self.get_conversation(user_id, payload.conversation_id) if payload.conversation_id else None
         if conversation is None:
             conversation = await self.create_conversation(user_id, payload.message[:60])
@@ -112,6 +97,7 @@ class ChatService:
         self.db.add(assistant_message)
         self.db.add(
             AgentRun(
+                user_id=uuid.UUID(user_id),
                 conversation_id=conversation.id,
                 agent_name="nexus-orchestrator",
                 status="completed",

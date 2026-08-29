@@ -26,6 +26,8 @@ services:
   web:
     build:
       context: ./apps/web
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:8000
     ports:
@@ -35,4 +37,3 @@ services:
 
 volumes:
   postgres-data:
-

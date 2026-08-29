@@ -7,15 +7,29 @@
 }
 
 body {
-  @apply bg-bg text-text;
-  font-family: "Segoe UI", sans-serif;
+  @apply bg-bg text-text antialiased;
+  font-family: "Avenir Next", "Trebuchet MS", sans-serif;
   min-height: 100vh;
   background-image:
-    radial-gradient(circle at top, rgba(56, 189, 248, 0.12), transparent 28%),
-    linear-gradient(180deg, #09090b 0%, #09090b 60%, #0f172a 100%);
+    radial-gradient(circle at 6% 0%, rgba(184, 243, 107, 0.16), transparent 22%),
+    radial-gradient(circle at 94% 20%, rgba(65, 175, 191, 0.17), transparent 25%),
+    linear-gradient(135deg, #0b1620 0%, #102632 52%, #0b1620 100%);
 }
 
 a {
   @apply text-inherit no-underline;
 }
 
+::selection {
+  background: #b8f36b;
+  color: #0b1620;
+}
+
+.mesh {
+  background-image: linear-gradient(rgba(184, 243, 107, 0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(184, 243, 107, 0.035) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.panel-glow {
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.22), inset 0 1px rgba(255, 255, 255, 0.04);
+}

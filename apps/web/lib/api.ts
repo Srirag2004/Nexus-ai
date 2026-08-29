@@ -4,30 +4,56 @@ import {
   Conversation,
   DocumentRecord,
   EvaluationRun,
+  Message,
   MemoryRecord,
   RepositoryRecord,
 } from "@/lib/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
+export type SignedInUser = { id: string; email: string; display_name: string };
+
+function sessionHeaders(): HeadersInit {
+  const token = typeof window === "undefined" ? null : localStorage.getItem("nexus_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, {
     ...init,
     headers: {
+      ...sessionHeaders(),
       ...(init?.headers ?? {}),
     },
     cache: "no-store",
   });
   if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
+    const payload = await response.json().catch(() => null) as { detail?: string } | null;
+    throw new Error(payload?.detail ?? `Request failed: ${response.status}`);
   }
   return response.json() as Promise<T>;
 }
 
 export const api = {
+  signUp: (email: string, password: string, display_name: string) => request<{ access_token: string; user: SignedInUser }>("/api/v1/auth/signup", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password, display_name }) }),
+  signIn: (email: string, password: string) => request<{ access_token: string; user: SignedInUser }>("/api/v1/auth/signin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) }),
+  me: () => request<SignedInUser>("/api/v1/auth/me"),
   health: () => request<{ status: string; database: string }>("/health"),
   conversations: () => request<Conversation[]>("/api/v1/conversations"),
+  conversation: (conversationId: string) => request<Conversation & { messages: Message[] }>(`/api/v1/conversations/${conversationId}`),
+  deleteConversation: (conversationId: string) => request<void>(`/api/v1/conversations/${conversationId}`, { method: "DELETE" }),
   documents: () => request<DocumentRecord[]>("/api/v1/documents"),
+  uploadDocument: async (file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    return request<DocumentRecord>("/api/v1/documents", { method: "POST", body: form });
+  },
+  askDocuments: (question: string) =>
+    request<{ answer: string; sources: Array<Record<string, unknown>> }>("/api/v1/documents/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question }),
+    }),
   memories: () => request<MemoryRecord[]>("/api/v1/memories"),
   repositories: () => request<RepositoryRecord[]>("/api/v1/github/repositories"),
   agentRuns: () => request<AgentRun[]>("/api/v1/agents/runs"),
@@ -56,4 +82,3 @@ export const api = {
       body: JSON.stringify({ resume_text, job_description }),
     }),
 };
-

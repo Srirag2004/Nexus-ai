@@ -21,8 +21,9 @@ class TimestampMixin:
 class User(TimestampMixin, Base):
     __tablename__ = "users"
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    email: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     display_name: Mapped[str] = mapped_column(String(255), default="Local User")
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
 
 
 class Conversation(TimestampMixin, Base):
@@ -129,6 +130,7 @@ class CareerAnalysis(TimestampMixin, Base):
 class AgentRun(TimestampMixin, Base):
     __tablename__ = "agent_runs"
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), index=True)
     conversation_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("conversations.id"), nullable=True)
     agent_name: Mapped[str] = mapped_column(String(100))
     status: Mapped[str] = mapped_column(String(32), default="completed")
@@ -151,6 +153,7 @@ class ToolInvocation(TimestampMixin, Base):
 class EvaluationRun(TimestampMixin, Base):
     __tablename__ = "evaluation_runs"
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), index=True)
     evaluation_type: Mapped[str] = mapped_column(String(50))
     status: Mapped[str] = mapped_column(String(32), default="completed")
     metrics: Mapped[dict] = mapped_column(JsonType, default=dict)

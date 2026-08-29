@@ -9,13 +9,12 @@ type PanelProps = PropsWithChildren<{
 
 export function Panel({ title, description, className, children }: PanelProps) {
   return (
-    <section className={clsx("rounded-3xl border border-border bg-panel/80 p-6", className)}>
+    <section className={clsx("panel-glow rounded-[1.75rem] border border-border/80 bg-panel/85 p-5 backdrop-blur-md md:p-6", className)}>
       <div className="mb-4">
-        <h2 className="text-lg font-semibold">{title}</h2>
+        <h2 className="font-serif text-xl font-semibold tracking-tight">{title}</h2>
         {description ? <p className="mt-1 text-sm text-muted">{description}</p> : null}
       </div>
       {children}
     </section>
   );
 }
-

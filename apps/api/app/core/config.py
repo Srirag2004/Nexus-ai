@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "NEXUS AI"
-    app_env: Literal["development", "test", "production"] = "development"
+    app_env: Literal["development", "test", "qa", "production"] = "development"
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     database_url: str = "sqlite+aiosqlite:///./nexus.db"
@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     openai_api_key: str | None = None
     openai_model: str = "gpt-5"
     github_token: str | None = None
+    auth_secret: str = "change-this-before-production"
+    auth_token_hours: int = 168
     allowed_origins: str = "http://localhost:3000"
     max_upload_size_mb: int = 10
     default_user_id: str = Field(
@@ -37,4 +39,3 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
-

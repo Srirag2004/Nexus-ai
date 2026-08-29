@@ -18,10 +18,10 @@ class OpenAIProvider(AIProvider):
     async def generate(self, system_prompt: str, user_prompt: str) -> str:
         response = await self.client.responses.create(
             model=self.model,
+            store=False,
             input=[
                 {"role": "system", "content": [{"type": "input_text", "text": system_prompt}]},
                 {"role": "user", "content": [{"type": "input_text", "text": user_prompt}]},
             ],
         )
         return response.output_text
-

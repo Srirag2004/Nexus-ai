@@ -5,12 +5,12 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        bg: "#09090b",
-        panel: "#111115",
-        border: "#27272a",
-        text: "#fafafa",
-        muted: "#a1a1aa",
-        accent: "#38bdf8",
+        bg: "#0b1620",
+        panel: "#12222e",
+        border: "#28404f",
+        text: "#edf7f5",
+        muted: "#9bb0b8",
+        accent: "#b8f36b",
       },
     },
   },
@@ -18,4 +18,3 @@ const config: Config = {
 };
 
 export default config;
-

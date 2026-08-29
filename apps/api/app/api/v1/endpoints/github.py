@@ -2,7 +2,8 @@ from sqlalchemy import select
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_settings
+from app.core.security import get_current_user
+from app.db.models.entities import User
 from app.db.models.entities import RepositoryAnalysis
 from app.db.session import get_db
 from app.schemas.github import (
@@ -31,9 +32,9 @@ def _analysis_to_response(analysis: RepositoryAnalysis) -> RepositoryAnalysisRes
 
 
 @router.post("/analyze", response_model=GitHubRepositoryResponse, status_code=status.HTTP_201_CREATED)
-async def analyze_repository(payload: GitHubAnalyzeRequest, db: AsyncSession = Depends(get_db)) -> GitHubRepositoryResponse:
+async def analyze_repository(payload: GitHubAnalyzeRequest, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)) -> GitHubRepositoryResponse:
     service = GitHubService(db)
-    repository, analysis = await service.analyze_repository(get_settings().default_user_id, payload.repository_url)
+    repository, analysis = await service.analyze_repository(user.id, payload.repository_url)
     return GitHubRepositoryResponse(
         id=repository.id,
         owner=repository.owner,
@@ -46,9 +47,9 @@ async def analyze_repository(payload: GitHubAnalyzeRequest, db: AsyncSession = D
 
 
 @router.get("/repositories", response_model=list[GitHubRepositoryResponse])
-async def list_repositories(db: AsyncSession = Depends(get_db)) -> list[GitHubRepositoryResponse]:
+async def list_repositories(db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)) -> list[GitHubRepositoryResponse]:
     service = GitHubService(db)
-    repositories = await service.list_repositories(get_settings().default_user_id)
+    repositories = await service.list_repositories(user.id)
     items: list[GitHubRepositoryResponse] = []
     for repository in repositories:
         result = await db.execute(
@@ -70,9 +71,9 @@ async def list_repositories(db: AsyncSession = Depends(get_db)) -> list[GitHubRe
 
 
 @router.get("/repositories/{repository_id}", response_model=GitHubRepositoryResponse)
-async def get_repository(repository_id: str, db: AsyncSession = Depends(get_db)) -> GitHubRepositoryResponse:
+async def get_repository(repository_id: str, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)) -> GitHubRepositoryResponse:
     service = GitHubService(db)
-    repositories = await service.list_repositories(get_settings().default_user_id)
+    repositories = await service.list_repositories(user.id)
     for repository in repositories:
         if str(repository.id) == repository_id:
             result = await db.execute(
@@ -92,11 +93,10 @@ async def get_repository(repository_id: str, db: AsyncSession = Depends(get_db))
 
 
 @router.post("/repositories/{repository_id}/ask", response_model=GitHubAskResponse)
-async def ask_repository(repository_id: str, payload: GitHubAskRequest, db: AsyncSession = Depends(get_db)) -> GitHubAskResponse:
+async def ask_repository(repository_id: str, payload: GitHubAskRequest, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)) -> GitHubAskResponse:
     service = GitHubService(db)
     try:
-        result = await service.ask_repository(repository_id, payload.question)
+        result = await service.ask_repository_for_user(user.id, repository_id, payload.question)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     return GitHubAskResponse(answer=result["answer"], sources=result["sources"])
-
