@@ -1,0 +1,102 @@
+from sqlalchemy import select
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.config import get_settings
+from app.db.models.entities import RepositoryAnalysis
+from app.db.session import get_db
+from app.schemas.github import (
+    GitHubAnalyzeRequest,
+    GitHubAskRequest,
+    GitHubAskResponse,
+    GitHubRepositoryResponse,
+    RepositoryAnalysisResponse,
+)
+from app.services.github.service import GitHubService
+
+router = APIRouter()
+
+
+def _analysis_to_response(analysis: RepositoryAnalysis) -> RepositoryAnalysisResponse:
+    return RepositoryAnalysisResponse(
+        id=analysis.id,
+        repository_id=analysis.repository_id,
+        summary=analysis.summary,
+        architecture=analysis.architecture,
+        strengths=analysis.strengths,
+        issues=analysis.issues,
+        recommendations=analysis.recommendations,
+        created_at=analysis.created_at,
+    )
+
+
+@router.post("/analyze", response_model=GitHubRepositoryResponse, status_code=status.HTTP_201_CREATED)
+async def analyze_repository(payload: GitHubAnalyzeRequest, db: AsyncSession = Depends(get_db)) -> GitHubRepositoryResponse:
+    service = GitHubService(db)
+    repository, analysis = await service.analyze_repository(get_settings().default_user_id, payload.repository_url)
+    return GitHubRepositoryResponse(
+        id=repository.id,
+        owner=repository.owner,
+        name=repository.name,
+        url=repository.url,
+        languages=repository.languages,
+        created_at=repository.created_at,
+        latest_analysis=_analysis_to_response(analysis),
+    )
+
+
+@router.get("/repositories", response_model=list[GitHubRepositoryResponse])
+async def list_repositories(db: AsyncSession = Depends(get_db)) -> list[GitHubRepositoryResponse]:
+    service = GitHubService(db)
+    repositories = await service.list_repositories(get_settings().default_user_id)
+    items: list[GitHubRepositoryResponse] = []
+    for repository in repositories:
+        result = await db.execute(
+            select(RepositoryAnalysis).where(RepositoryAnalysis.repository_id == repository.id).order_by(RepositoryAnalysis.created_at.desc())
+        )
+        analysis = result.scalars().first()
+        items.append(
+            GitHubRepositoryResponse(
+                id=repository.id,
+                owner=repository.owner,
+                name=repository.name,
+                url=repository.url,
+                languages=repository.languages,
+                created_at=repository.created_at,
+                latest_analysis=_analysis_to_response(analysis) if analysis else None,
+            )
+        )
+    return items
+
+
+@router.get("/repositories/{repository_id}", response_model=GitHubRepositoryResponse)
+async def get_repository(repository_id: str, db: AsyncSession = Depends(get_db)) -> GitHubRepositoryResponse:
+    service = GitHubService(db)
+    repositories = await service.list_repositories(get_settings().default_user_id)
+    for repository in repositories:
+        if str(repository.id) == repository_id:
+            result = await db.execute(
+                select(RepositoryAnalysis).where(RepositoryAnalysis.repository_id == repository.id).order_by(RepositoryAnalysis.created_at.desc())
+            )
+            analysis = result.scalars().first()
+            return GitHubRepositoryResponse(
+                id=repository.id,
+                owner=repository.owner,
+                name=repository.name,
+                url=repository.url,
+                languages=repository.languages,
+                created_at=repository.created_at,
+                latest_analysis=_analysis_to_response(analysis) if analysis else None,
+            )
+    raise HTTPException(status_code=404, detail="Repository not found")
+
+
+@router.post("/repositories/{repository_id}/ask", response_model=GitHubAskResponse)
+async def ask_repository(repository_id: str, payload: GitHubAskRequest, db: AsyncSession = Depends(get_db)) -> GitHubAskResponse:
+    service = GitHubService(db)
+    try:
+        result = await service.ask_repository(repository_id, payload.question)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return GitHubAskResponse(answer=result["answer"], sources=result["sources"])
+
