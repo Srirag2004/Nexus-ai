@@ -58,6 +58,9 @@ export type CareerAnalysis = {
   missing_skills: string[];
   recommendations: string[];
   summary: string;
+  skills_considered: number;
+  score_label: string;
+  score_explanation: string;
   created_at: string;
   heuristic: string;
 };
@@ -79,4 +82,3 @@ export type EvaluationRun = {
   metrics: Record<string, number>;
   created_at: string;
 };
-

@@ -33,7 +33,7 @@ export default function CareerPage() {
 
   return (
     <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-      <Panel title="Career Analysis" description="Paste or upload your resume and a job description to compare them using your project and memory context.">
+      <Panel title="Career Analysis" description="Paste or upload your resume and a job description for a clear skills-based comparison.">
         <form onSubmit={onSubmit} className="space-y-4">
           <SourceInput
             label="Resume"
@@ -59,17 +59,43 @@ export default function CareerPage() {
       </Panel>
       <Panel title="Result">
         {analysis ? (
-          <div className="space-y-4 text-sm">
-            <div className="text-3xl font-semibold">{Math.round(analysis.match_score * 100)}%</div>
-            <div className="text-muted">{analysis.heuristic}</div>
-            <div>{analysis.summary}</div>
-            <div>Matched: {analysis.matched_skills.join(", ") || "None"}</div>
-            <div>Missing: {analysis.missing_skills.join(", ") || "None"}</div>
+          <div className="space-y-5 text-sm">
+            <div className="rounded-2xl border border-accent/30 bg-accent/10 p-5">
+              <div className="flex items-end justify-between gap-4">
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">{analysis.score_label}</div>
+                  <div className="mt-2 text-5xl font-semibold">{Math.round(analysis.match_score * 100)}%</div>
+                </div>
+                <div className="text-right text-xs text-muted">Skills coverage<br />not a hiring prediction</div>
+              </div>
+              <p className="mt-4 text-muted">{analysis.score_explanation}</p>
+            </div>
+            <p className="leading-6">{analysis.summary}</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <SkillGroup title={`Strengths (${analysis.matched_skills.length})`} skills={analysis.matched_skills} tone="border-emerald-400/30 bg-emerald-400/10" empty="No matching skills detected yet." />
+              <SkillGroup title={`Gaps to review (${analysis.missing_skills.length})`} skills={analysis.missing_skills} tone="border-amber-400/30 bg-amber-400/10" empty="No major skill gaps detected." />
+            </div>
+            <div className="rounded-2xl border border-border bg-black/10 p-4">
+              <h3 className="font-medium">Next best actions</h3>
+              <ol className="mt-3 space-y-2 text-muted">
+                {analysis.recommendations.map((recommendation, index) => <li key={recommendation}>{index + 1}. {recommendation}</li>)}
+              </ol>
+            </div>
+            <p className="text-xs leading-5 text-muted">{analysis.heuristic}</p>
           </div>
         ) : (
           <div className="text-sm text-muted">Run an analysis to see the role fit summary.</div>
         )}
       </Panel>
+    </div>
+  );
+}
+
+function SkillGroup({ title, skills, tone, empty }: { title: string; skills: string[]; tone: string; empty: string }) {
+  return (
+    <div className={`rounded-2xl border p-4 ${tone}`}>
+      <h3 className="font-medium">{title}</h3>
+      {skills.length ? <div className="mt-3 flex flex-wrap gap-2">{skills.map((skill) => <span key={skill} className="rounded-full bg-black/20 px-2.5 py-1 text-xs">{skill}</span>)}</div> : <p className="mt-3 text-xs text-muted">{empty}</p>}
     </div>
   );
 }

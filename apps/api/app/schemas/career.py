@@ -16,6 +16,8 @@ class CareerAnalysisResponse(BaseModel):
     missing_skills: list[str]
     recommendations: list[str]
     summary: str
+    skills_considered: int
+    score_label: str
+    score_explanation: str
     created_at: datetime
-    heuristic: str = "Heuristic match score, not a scientific assessment."
-
+    heuristic: str = "A skills-coverage estimate based on terms found in the job description, not a hiring prediction."

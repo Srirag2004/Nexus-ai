@@ -56,6 +56,20 @@ async def _read_source(label: str, pasted_text: str, uploaded_file: UploadFile |
 
 
 def _response(analysis) -> CareerAnalysisResponse:
+    skills_considered = len(analysis.matched_skills) + len(analysis.missing_skills)
+    percentage = round(analysis.match_score * 100)
+    if not skills_considered:
+        score_label = "Needs more role detail"
+        score_explanation = "No common skills were detected in the job description, so there is no reliable score yet."
+    elif percentage >= 80:
+        score_label = "Strong skills alignment"
+        score_explanation = f"Your resume demonstrates {len(analysis.matched_skills)} of {skills_considered} skills detected for this role."
+    elif percentage >= 50:
+        score_label = "Partial skills alignment"
+        score_explanation = f"Your resume demonstrates {len(analysis.matched_skills)} of {skills_considered} skills detected for this role."
+    else:
+        score_label = "Growth opportunity"
+        score_explanation = f"Your resume demonstrates {len(analysis.matched_skills)} of {skills_considered} skills detected for this role."
     return CareerAnalysisResponse(
         id=analysis.id,
         match_score=analysis.match_score,
@@ -63,5 +77,8 @@ def _response(analysis) -> CareerAnalysisResponse:
         missing_skills=analysis.missing_skills,
         recommendations=analysis.recommendations,
         summary=analysis.summary,
+        skills_considered=skills_considered,
+        score_label=score_label,
+        score_explanation=score_explanation,
         created_at=analysis.created_at,
     )
