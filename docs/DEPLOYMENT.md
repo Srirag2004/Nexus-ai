@@ -43,6 +43,16 @@ ALLOWED_ORIGINS=https://YOUR-QA-VERCEL-DOMAIN.vercel.app
 MAX_UPLOAD_SIZE_MB=10
 ```
 
+For QA without OpenAI credits, Gemini can be used instead:
+
+```text
+AI_PROVIDER=gemini
+GEMINI_API_KEY=<server-only Gemini key>
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+Use only one live provider at a time. Keep provider keys in Railway and never expose them in Vercel or browser code.
+
 Generate `AUTH_SECRET` with:
 
 ```bash

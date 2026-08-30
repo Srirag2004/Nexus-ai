@@ -18,9 +18,11 @@ class Settings(BaseSettings):
     api_port: int = 8000
     database_url: str = "sqlite+aiosqlite:///./nexus.db"
     sync_database_url: str = "sqlite:///./nexus.db"
-    ai_provider: Literal["mock", "openai"] = "mock"
+    ai_provider: Literal["mock", "openai", "gemini"] = "mock"
     openai_api_key: str | None = None
     openai_model: str = "gpt-5"
+    gemini_api_key: str | None = None
+    gemini_model: str = "gemini-2.5-flash"
     github_token: str | None = None
     auth_secret: str = "change-this-before-production"
     auth_token_hours: int = 168

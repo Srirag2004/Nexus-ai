@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,6 +27,6 @@ async def create_memory(payload: MemoryCreate, db: AsyncSession = Depends(get_db
 
 
 @router.delete("/{memory_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_memory(memory_id: str, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)) -> None:
+async def delete_memory(memory_id: UUID, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)) -> None:
     service = MemoryService(db)
     await service.delete_memory(user.id, memory_id)

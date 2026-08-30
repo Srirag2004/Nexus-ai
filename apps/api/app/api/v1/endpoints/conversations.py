@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,7 +29,7 @@ async def create_conversation(payload: ConversationCreate, db: AsyncSession = De
 
 
 @router.get("/{conversation_id}", response_model=ConversationDetailResponse)
-async def get_conversation(conversation_id: str, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)) -> ConversationDetailResponse:
+async def get_conversation(conversation_id: UUID, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)) -> ConversationDetailResponse:
     service = ChatService(db, get_ai_provider())
     conversation = await service.get_conversation(str(user.id), conversation_id)
     if not conversation:
@@ -42,6 +44,6 @@ async def get_conversation(conversation_id: str, db: AsyncSession = Depends(get_
 
 
 @router.delete("/{conversation_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_conversation(conversation_id: str, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)) -> None:
+async def delete_conversation(conversation_id: UUID, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)) -> None:
     service = ChatService(db, get_ai_provider())
     await service.delete_conversation(str(user.id), conversation_id)
