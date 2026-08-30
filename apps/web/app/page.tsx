@@ -19,7 +19,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     Promise.all([api.health(), api.conversations(), api.documents(), api.repositories()])
-      .then(([health, conversations, documents, repositories]) => setWorkspace({ conversations: conversations.length, documents: documents.length, repositories: repositories.length, online: health.status === "healthy" }))
+      .then(([health, conversations, documents, repositories]) => setWorkspace({ conversations: conversations.length, documents: documents.length, repositories: repositories.length, online: health.status === "ok" }))
       .catch(() => setWorkspace((current) => ({ ...current, online: false })));
   }, []);
 

@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     openai_api_key: str | None = None
     openai_model: str = "gpt-5"
     gemini_api_key: str | None = None
-    gemini_model: str = "gemini-2.5-flash"
+    gemini_model: str = "gemini-3.6-flash"
     github_token: str | None = None
     auth_secret: str = "change-this-before-production"
     auth_token_hours: int = 168
