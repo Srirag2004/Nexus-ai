@@ -1,8 +1,6 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-  output: "standalone",
-};
+// Vercel supplies its own production output; Docker uses `next start`.
+const nextConfig: NextConfig = {};
 
 export default nextConfig;
-
