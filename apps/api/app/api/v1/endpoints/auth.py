@@ -59,6 +59,7 @@ async def oauth_callback(provider: str, code: str = Query(...), state: str = Que
     settings = get_settings()
     try:
         user = await OAuthService(db).authenticate(provider, code, state)
-        return RedirectResponse(f"{settings.frontend_url.rstrip('/')}/#token={create_access_token(user.id)}")
+        # Vercel reliably delivers query parameters to the client app, where AuthGate immediately stores and removes this temporary value.
+        return RedirectResponse(f"{settings.frontend_url.rstrip('/')}/?oauth_token={quote(create_access_token(user.id))}")
     except Exception:
-        return RedirectResponse(f"{settings.frontend_url.rstrip('/')}/#oauth_error={quote('OAuth sign-in failed. Please try again.')}")
+        return RedirectResponse(f"{settings.frontend_url.rstrip('/')}/?oauth_error={quote('OAuth sign-in failed. Please try again.')}")

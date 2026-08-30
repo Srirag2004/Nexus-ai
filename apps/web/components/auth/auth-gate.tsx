@@ -16,9 +16,10 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    const parameters = new URLSearchParams(window.location.search);
     const fragment = new URLSearchParams(window.location.hash.slice(1));
-    const oauthToken = fragment.get("token");
-    const oauthError = fragment.get("oauth_error");
+    const oauthToken = parameters.get("oauth_token") ?? fragment.get("token");
+    const oauthError = parameters.get("oauth_error") ?? fragment.get("oauth_error");
     if (oauthToken) {
       localStorage.setItem("nexus_token", oauthToken);
       window.history.replaceState(null, "", window.location.pathname);
