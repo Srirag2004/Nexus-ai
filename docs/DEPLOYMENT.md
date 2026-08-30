@@ -43,6 +43,28 @@ ALLOWED_ORIGINS=https://YOUR-QA-VERCEL-DOMAIN.vercel.app
 MAX_UPLOAD_SIZE_MB=10
 ```
 
+## OAuth sign-in and GitHub connection
+
+Google and GitHub OAuth must be configured in their provider dashboards before deploying this feature. In Railway, add:
+
+```text
+FRONTEND_URL=https://YOUR-VERCEL-DOMAIN.vercel.app
+BACKEND_URL=https://YOUR-RAILWAY-DOMAIN.up.railway.app
+GOOGLE_OAUTH_CLIENT_ID=<Google OAuth web client id>
+GOOGLE_OAUTH_CLIENT_SECRET=<Google OAuth web client secret>
+GITHUB_OAUTH_CLIENT_ID=<GitHub OAuth app client id>
+GITHUB_OAUTH_CLIENT_SECRET=<GitHub OAuth app client secret>
+```
+
+Create web OAuth applications with these exact callback URLs:
+
+```text
+Google: https://YOUR-RAILWAY-DOMAIN.up.railway.app/api/v1/auth/oauth/google/callback
+GitHub: https://YOUR-RAILWAY-DOMAIN.up.railway.app/api/v1/auth/oauth/github/callback
+```
+
+GitHub connection requests `repo` permission so a user can choose private repositories. Explain this clearly to users and never expose the OAuth client secret or their access token in Vercel/browser variables.
+
 For QA without OpenAI credits, Gemini can be used instead:
 
 ```text

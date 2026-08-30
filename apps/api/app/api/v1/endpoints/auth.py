@@ -1,11 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from urllib.parse import quote
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import create_access_token, get_current_user, hash_password, verify_password
+from app.core.config import get_settings
 from app.db.models.entities import User
 from app.db.session import get_db
 from app.schemas.auth import AuthResponse, SignInRequest, SignUpRequest, UserResponse
+from app.services.oauth import OAuthService
 
 router = APIRouter()
 
@@ -39,3 +44,21 @@ async def signin(payload: SignInRequest, db: AsyncSession = Depends(get_db)) -> 
 @router.get("/me", response_model=UserResponse)
 async def me(user: User = Depends(get_current_user)) -> UserResponse:
     return user_response(user)
+
+
+@router.get("/oauth/{provider}/start")
+async def oauth_start(provider: str, db: AsyncSession = Depends(get_db)) -> RedirectResponse:
+    try:
+        return RedirectResponse(OAuthService(db).authorization_url(provider))
+    except ValueError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@router.get("/oauth/{provider}/callback")
+async def oauth_callback(provider: str, code: str = Query(...), state: str = Query(...), db: AsyncSession = Depends(get_db)) -> RedirectResponse:
+    settings = get_settings()
+    try:
+        user = await OAuthService(db).authenticate(provider, code, state)
+        return RedirectResponse(f"{settings.frontend_url.rstrip('/')}/#token={create_access_token(user.id)}")
+    except Exception:
+        return RedirectResponse(f"{settings.frontend_url.rstrip('/')}/#oauth_error={quote('OAuth sign-in failed. Please try again.')}")

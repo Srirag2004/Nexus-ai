@@ -21,9 +21,9 @@ class GitHubService:
         )
         return list(result.scalars())
 
-    async def analyze_repository(self, user_id: UUID, repository_url: str) -> tuple[GitHubRepository, RepositoryAnalysis]:
+    async def analyze_repository(self, user_id: UUID, repository_url: str, access_token: str | None = None) -> tuple[GitHubRepository, RepositoryAnalysis]:
         owner, name = self._parse_repository_url(repository_url)
-        metadata = await self._fetch_repository_data(owner, name)
+        metadata = await self._fetch_repository_data(owner, name, access_token)
         repository = GitHubRepository(
             user_id=user_id,
             owner=owner,
@@ -72,10 +72,32 @@ class GitHubService:
             "sources": [{"path": path} for path in relevant_paths],
         }
 
-    async def _fetch_repository_data(self, owner: str, name: str) -> dict:
+    async def list_available_repositories(self, access_token: str) -> list[dict]:
+        headers = {"Accept": "application/vnd.github+json", "Authorization": f"Bearer {access_token}"}
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            response = await client.get(
+                "https://api.github.com/user/repos?affiliation=owner,collaborator,organization_member&sort=updated&per_page=100",
+                headers=headers,
+            )
+        response.raise_for_status()
+        return [
+            {
+                "id": item["id"],
+                "name": item["name"],
+                "full_name": item["full_name"],
+                "url": item["html_url"],
+                "private": item["private"],
+                "description": item.get("description") or "",
+                "updated_at": item["updated_at"],
+            }
+            for item in response.json()
+        ]
+
+    async def _fetch_repository_data(self, owner: str, name: str, access_token: str | None = None) -> dict:
         headers = {"Accept": "application/vnd.github+json"}
-        if self.settings.github_token:
-            headers["Authorization"] = f"Bearer {self.settings.github_token}"
+        token = access_token or self.settings.github_token
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
         async with httpx.AsyncClient(timeout=20.0) as client:
             repo_resp = await client.get(f"https://api.github.com/repos/{owner}/{name}", headers=headers)
             repo_resp.raise_for_status()

@@ -24,6 +24,12 @@ class Settings(BaseSettings):
     gemini_api_key: str | None = None
     gemini_model: str = "gemini-3.6-flash"
     github_token: str | None = None
+    frontend_url: str = "http://localhost:3000"
+    backend_url: str = "http://localhost:8000"
+    google_oauth_client_id: str | None = None
+    google_oauth_client_secret: str | None = None
+    github_oauth_client_id: str | None = None
+    github_oauth_client_secret: str | None = None
     auth_secret: str = "change-this-before-production"
     auth_token_hours: int = 168
     allowed_origins: str = "http://localhost:3000"

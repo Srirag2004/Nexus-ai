@@ -14,6 +14,7 @@ from app.schemas.github import (
     RepositoryAnalysisResponse,
 )
 from app.services.github.service import GitHubService
+from app.services.oauth import OAuthService
 
 router = APIRouter()
 
@@ -35,6 +36,39 @@ def _analysis_to_response(analysis: RepositoryAnalysis) -> RepositoryAnalysisRes
 async def analyze_repository(payload: GitHubAnalyzeRequest, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)) -> GitHubRepositoryResponse:
     service = GitHubService(db)
     repository, analysis = await service.analyze_repository(user.id, payload.repository_url)
+    return GitHubRepositoryResponse(
+        id=repository.id,
+        owner=repository.owner,
+        name=repository.name,
+        url=repository.url,
+        languages=repository.languages,
+        created_at=repository.created_at,
+        latest_analysis=_analysis_to_response(analysis),
+    )
+
+
+@router.get("/connection")
+async def github_connection(db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)) -> dict:
+    return {"connected": await OAuthService(db).github_connected(user.id)}
+
+
+@router.get("/available-repositories")
+async def available_repositories(db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)) -> list[dict]:
+    token = await OAuthService(db).github_token_for_user(user.id)
+    if not token:
+        raise HTTPException(status_code=400, detail="Connect GitHub to browse your repositories")
+    return await GitHubService(db).list_available_repositories(token)
+
+
+@router.post("/import", response_model=GitHubRepositoryResponse, status_code=status.HTTP_201_CREATED)
+async def import_repository(payload: GitHubAnalyzeRequest, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)) -> GitHubRepositoryResponse:
+    token = await OAuthService(db).github_token_for_user(user.id)
+    if not token:
+        raise HTTPException(status_code=400, detail="Connect GitHub before importing a repository")
+    try:
+        repository, analysis = await GitHubService(db).analyze_repository(user.id, payload.repository_url, token)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail="Could not import this GitHub repository") from exc
     return GitHubRepositoryResponse(
         id=repository.id,
         owner=repository.owner,

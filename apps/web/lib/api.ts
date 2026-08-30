@@ -36,6 +36,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  oauthStartUrl: (provider: "google" | "github") => `${API_URL}/api/v1/auth/oauth/${provider}/start`,
   signUp: (email: string, password: string, display_name: string) => request<{ access_token: string; user: SignedInUser }>("/api/v1/auth/signup", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password, display_name }) }),
   signIn: (email: string, password: string) => request<{ access_token: string; user: SignedInUser }>("/api/v1/auth/signin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) }),
   me: () => request<SignedInUser>("/api/v1/auth/me"),
@@ -57,6 +58,8 @@ export const api = {
     }),
   memories: () => request<MemoryRecord[]>("/api/v1/memories"),
   repositories: () => request<RepositoryRecord[]>("/api/v1/github/repositories"),
+  githubConnection: () => request<{ connected: boolean }>("/api/v1/github/connection"),
+  availableGitHubRepositories: () => request<Array<{ id: number; name: string; full_name: string; url: string; private: boolean; description: string; updated_at: string }>>("/api/v1/github/available-repositories"),
   agentRuns: () => request<AgentRun[]>("/api/v1/agents/runs"),
   evaluations: () => request<EvaluationRun[]>("/api/v1/evaluations"),
   chat: (message: string, conversation_id?: string) =>
@@ -72,6 +75,12 @@ export const api = {
     }),
   analyzeRepository: (repository_url: string) =>
     request<RepositoryRecord>("/api/v1/github/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ repository_url }),
+    }),
+  importGitHubRepository: (repository_url: string) =>
+    request<RepositoryRecord>("/api/v1/github/import", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ repository_url }),

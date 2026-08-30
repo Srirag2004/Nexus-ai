@@ -26,6 +26,17 @@ class User(TimestampMixin, Base):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
 
 
+class OAuthAccount(TimestampMixin, Base):
+    __tablename__ = "oauth_accounts"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    provider: Mapped[str] = mapped_column(String(32), index=True)
+    provider_account_id: Mapped[str] = mapped_column(String(255), index=True)
+    username: Mapped[str] = mapped_column(String(255), default="")
+    encrypted_access_token: Mapped[str] = mapped_column(Text)
+    scopes: Mapped[str] = mapped_column(String(500), default="")
+
+
 class Conversation(TimestampMixin, Base):
     __tablename__ = "conversations"
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
