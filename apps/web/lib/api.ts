@@ -6,6 +6,7 @@ import {
   EvaluationRun,
   Message,
   MemoryRecord,
+  ProjectRecord,
   RepositoryRecord,
 } from "@/lib/types";
 
@@ -89,4 +90,13 @@ export const api = {
     if (jobFile) form.append("job_file", jobFile);
     return request<CareerAnalysis>("/api/v1/career/analyze-upload", { method: "POST", body: form });
   },
+  projects: () => request<ProjectRecord[]>("/api/v1/projects"),
+  createProject: (title: string, goal: string, description: string, repository_id: string | null, document_ids: string[]) =>
+    request<ProjectRecord>("/api/v1/projects", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, goal, description, repository_id, document_ids }),
+    }),
+  generateProjectBrief: (projectId: string) => request<ProjectRecord>(`/api/v1/projects/${projectId}/generate`, { method: "POST" }),
+  deleteProject: (projectId: string) => request<void>(`/api/v1/projects/${projectId}`, { method: "DELETE" }),
 };

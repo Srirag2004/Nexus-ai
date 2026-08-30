@@ -102,3 +102,21 @@ def test_career_analysis_accepts_uploaded_sources(client: TestClient, auth_heade
     )
     assert response.status_code == 201
     assert "Python" in response.json()["matched_skills"]
+
+
+def test_project_intelligence_creates_and_generates_brief(client: TestClient, auth_headers: dict[str, str]) -> None:
+    create_response = client.post(
+        "/api/v1/projects",
+        headers=auth_headers,
+        json={
+            "title": "NEXUS launch",
+            "goal": "Launch a useful project workspace for testers",
+            "description": "Focus on a small, testable first release.",
+        },
+    )
+    assert create_response.status_code == 201
+    project_id = create_response.json()["id"]
+    brief_response = client.post(f"/api/v1/projects/{project_id}/generate", headers=auth_headers)
+    assert brief_response.status_code == 200
+    assert brief_response.json()["brief"]
+    assert brief_response.json()["milestones"]

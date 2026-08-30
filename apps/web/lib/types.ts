@@ -65,6 +65,24 @@ export type CareerAnalysis = {
   heuristic: string;
 };
 
+export type ProjectRecord = {
+  id: string;
+  title: string;
+  goal: string;
+  description: string;
+  status: string;
+  repository_id: string | null;
+  repository_name: string | null;
+  document_ids: string[];
+  document_names: string[];
+  brief: string;
+  milestones: string[];
+  risks: string[];
+  next_steps: string[];
+  created_at: string;
+  updated_at: string;
+};
+
 export type AgentRun = {
   id: string;
   agent_name: string;

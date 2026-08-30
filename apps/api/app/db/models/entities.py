@@ -106,6 +106,30 @@ class RepositoryAnalysis(TimestampMixin, Base):
     repository: Mapped[GitHubRepository] = relationship(back_populates="analyses")
 
 
+class Project(TimestampMixin, Base):
+    __tablename__ = "projects"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    title: Mapped[str] = mapped_column(String(255))
+    goal: Mapped[str] = mapped_column(Text)
+    description: Mapped[str] = mapped_column(Text, default="")
+    status: Mapped[str] = mapped_column(String(32), default="planning")
+    repository_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("github_repositories.id"), nullable=True)
+    brief: Mapped[str] = mapped_column(Text, default="")
+    milestones: Mapped[list[str]] = mapped_column(JsonType, default=list)
+    risks: Mapped[list[str]] = mapped_column(JsonType, default=list)
+    next_steps: Mapped[list[str]] = mapped_column(JsonType, default=list)
+    documents: Mapped[list["ProjectDocument"]] = relationship(back_populates="project", cascade="all, delete-orphan")
+
+
+class ProjectDocument(TimestampMixin, Base):
+    __tablename__ = "project_documents"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("projects.id"), index=True)
+    document_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("documents.id"), index=True)
+    project: Mapped[Project] = relationship(back_populates="documents")
+
+
 class JobDescription(TimestampMixin, Base):
     __tablename__ = "job_descriptions"
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

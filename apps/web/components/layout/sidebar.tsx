@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bot, BrainCircuit, BriefcaseBusiness, Github, LayoutDashboard, LibraryBig, LucideIcon, MessageSquareText, Settings, Sparkles } from "lucide-react";
+import { Bot, BrainCircuit, BriefcaseBusiness, FolderKanban, Github, LayoutDashboard, LibraryBig, LucideIcon, MessageSquareText, Settings, Sparkles } from "lucide-react";
 
 const links: Array<[string, string, LucideIcon]> = [
   ["Dashboard", "/", LayoutDashboard], ["Ask Nexus", "/chat", MessageSquareText],
   ["Knowledge", "/knowledge", LibraryBig], ["GitHub", "/github", Github],
+  ["Projects", "/projects", FolderKanban],
   ["Career", "/career", BriefcaseBusiness], ["Memory", "/memory", BrainCircuit],
   ["Agents", "/agents", Bot], ["Settings", "/settings", Settings],
 ];
