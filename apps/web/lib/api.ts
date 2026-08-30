@@ -81,4 +81,12 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ resume_text, job_description }),
     }),
+  analyzeCareerUpload: (resume_text: string, job_description: string, resumeFile?: File | null, jobFile?: File | null) => {
+    const form = new FormData();
+    form.append("resume_text", resume_text);
+    form.append("job_description", job_description);
+    if (resumeFile) form.append("resume_file", resumeFile);
+    if (jobFile) form.append("job_file", jobFile);
+    return request<CareerAnalysis>("/api/v1/career/analyze-upload", { method: "POST", body: form });
+  },
 };

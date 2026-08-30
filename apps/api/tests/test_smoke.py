@@ -89,3 +89,14 @@ def test_career_analysis(client: TestClient, auth_headers: dict[str, str]) -> No
     )
     assert response.status_code == 201
     assert response.json()["heuristic"]
+
+
+def test_career_analysis_accepts_uploaded_sources(client: TestClient, auth_headers: dict[str, str]) -> None:
+    response = client.post(
+        "/api/v1/career/analyze-upload",
+        headers=auth_headers,
+        data={"job_description": "Looking for Python and FastAPI experience"},
+        files={"resume_file": ("resume.txt", b"Python FastAPI engineer", "text/plain")},
+    )
+    assert response.status_code == 201
+    assert "python" in response.json()["matched_skills"]

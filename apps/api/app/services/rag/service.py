@@ -79,12 +79,26 @@ class DocumentService:
         )
         return DocumentAskResponse(answer=answer, sources=sources)
 
-    def _extract_text(self, filename: str, content_type: str, payload: bytes) -> str:
+    @staticmethod
+    def extract_text(filename: str, content_type: str, payload: bytes) -> str:
         suffix = filename.lower().split(".")[-1]
         if suffix in {"txt", "md"} or content_type.startswith("text/"):
             return payload.decode("utf-8", errors="ignore")
         if suffix == "pdf" or content_type == "application/pdf":
-            reader = PdfReader(BytesIO(payload))
-            return "\n".join((page.extract_text() or "") for page in reader.pages)
-        raise ValueError("Unsupported document type. Use PDF, TXT, or Markdown.")
+            try:
+                reader = PdfReader(BytesIO(payload))
+                return "\n".join((page.extract_text() or "") for page in reader.pages)
+            except Exception as exc:
+                raise ValueError("Could not read this PDF. Try exporting it again or paste the text.") from exc
+        if suffix == "docx" or content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+            try:
+                from docx import Document as WordDocument
 
+                document = WordDocument(BytesIO(payload))
+                return "\n".join(paragraph.text for paragraph in document.paragraphs)
+            except Exception as exc:
+                raise ValueError("Could not read this Word document. Use a .docx file or paste the text.") from exc
+        raise ValueError("Unsupported document type. Use PDF, Word (.docx), TXT, or Markdown.")
+
+    def _extract_text(self, filename: str, content_type: str, payload: bytes) -> str:
+        return self.extract_text(filename, content_type, payload)
